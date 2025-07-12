@@ -8,9 +8,11 @@ public class Player : MonoBehaviour
 
     [Header("Movement details")]
     [SerializeField] private float moveSpeed = 3.5f;
-    [SerializeField] private float jumpForce = 8f;
+    [SerializeField] private float jumpForce = 8;
     private float xInput;
     private bool facingRight = true;
+    private bool canMove = true;
+    private bool canJump = true;
 
     [Header("Collision details")]
     [SerializeField] private float groundCheckDistance;
@@ -20,7 +22,7 @@ public class Player : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        anim = GetComponentInChildren<Animator>();
+        anim = GetComponentInChildren<Animator>(); 
     }
 
     private void Update()
@@ -32,8 +34,16 @@ public class Player : MonoBehaviour
         HandleFlip();
     }
 
+    public void EnableMovementAndJump(bool enable)
+    {
+        canMove = enable;
+        canJump = enable;
+    }
+
     private void HandleAnimations()
     {
+        bool isMoving = rb.linearVelocity.x != 0; 
+
         anim.SetFloat("xVelocity", rb.linearVelocity.x);
         anim.SetFloat("yVelocity", rb.linearVelocity.y);
         anim.SetBool("isGrounded", isGrounded);
@@ -43,24 +53,45 @@ public class Player : MonoBehaviour
     {
         xInput = Input.GetAxis("Horizontal");
 
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            Jump();
+            TryToJump();
         }
+
+        if (Input.GetKeyDown(KeyCode.Mouse0))
+        {
+            TryToAttack();
+        }
+    }
+
+    private void TryToAttack()
+    {
+        if (isGrounded)
+        {
+            anim.SetTrigger("attack");
+        }
+    }
+
+    private void TryToJump()
+    {
+        if (isGrounded && canJump)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        }
+
     }
 
     private void HandleMovement()
     {
-        // update the player's horizontal velocity based on input
-        rb.linearVelocity = new Vector2(xInput * moveSpeed, rb.linearVelocity.y);
-    }
-
-    private void Jump()
-    {
-        if (isGrounded)
+        if (canMove)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            rb.linearVelocity = new Vector2(xInput * moveSpeed, rb.linearVelocity.y);
         }
+        else
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+        }
+
     }
 
     private void HandleCollision()
@@ -70,7 +101,7 @@ public class Player : MonoBehaviour
 
     private void HandleFlip()
     {
-        if (rb.linearVelocity.x > 0 && facingRight == false)
+        if (rb.linearVelocity.x > 0 && facingRight == false) 
         {
             Flip();
         }
@@ -83,7 +114,7 @@ public class Player : MonoBehaviour
     private void Flip()
     {
         transform.Rotate(0, 180, 0);
-        facingRight = !facingRight;
+        facingRight = !facingRight; 
     }
 
     private void OnDrawGizmos()
